@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TicketTier {
+  VIP
+  FRONT_ROW
+  GA
+}
+
+model TicketInventory {
+  id                 Int        @id @default(autoincrement())
+  tier               TicketTier @unique
+  price              Int
+  totalQuantity      Int
+  availableQuantity  Int
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model Booking {
+  id         Int        @id @default(autoincrement())
+  tier       TicketTier
+  quantity   Int
+  status     String
+  createdAt  DateTime   @default(now())
+}
+
