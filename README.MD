@@ -57,7 +57,56 @@ Built with **TypeScript**, **Prisma**, and follows best practices for security, 
 
 - Node.js v22 or greater
 - npm / yarn
-- PostgreSQL v14+
+- PostgreSQL v14+ (for local setup) or Docker (for containerized setup)
+
+---
+
+## Quick Start
+
+### Option 1: Run with Local PostgreSQL Database
+
+1. **Set up PostgreSQL locally**:
+   - Install and start PostgreSQL v14+ on your machine.
+   - Create a database named `ticket_booking`.
+
+2. **Configure environment**:
+   - Copy `.env.backup` to `.env` in the root directory.
+   - Update the `DATABASE_URL` to match your local PostgreSQL credentials (default: `postgresql://postgres:postgres@localhost:5432/ticket_booking`).
+
+3. **Install dependencies and set up database**:
+   ```bash
+   npm install
+   npm run prisma:migrate
+   npm run prisma:generate
+   npm run prisma:seed  # Optional: seed initial data
+   ```
+
+4. **Start the Express app locally**:
+   ```bash
+   npm run dev
+   ```
+   The app will run on `http://localhost:4000`.
+
+### Option 2: Run with Docker (Development Sample)
+
+For a quick development setup with containerized PostgreSQL and Express app, use Docker Compose. **Note**: This is a simple sample configuration for development purposes only and may not be suitable for production.
+
+1. **Configure environment**:
+   - Copy `.env.backup` to `.env` in the root directory.
+   - Ensure the `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` variables are set (defaults provided).
+   - The `DATABASE_URL` should point to the database service: `postgresql://postgres:postgres@db:5432/ticket_booking`.
+
+2. **Start with Docker Compose**:
+   ```bash
+   docker-compose up --build
+   ```
+   - The Express app will be available on `http://localhost:4000`.
+   - PostgreSQL will run in a container on port `5432`.
+
+3. **Stop the containers**:
+   ```bash
+   docker-compose down
+   ```
 
 ---
 
@@ -76,13 +125,32 @@ yarn install
 
 ## Environment Variables
 
-Create a `.env` file in the root directory and add the following variables:
+Create a `.env` file in the root directory based on `.env.backup`. The following variables are required:
 
 ```env
+# Database connection URL
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking"
+
+# Server port
 PORT=4000
-DATABASE_URL="postgresql://username:password@localhost:5432/ticket_booking_db"
+
+# Logging level (error, warn, info, debug)
+LOG_LEVEL=error
+
+# Node environment
+NODE_ENV=development
+
+# Allowed origins for CORS (comma-separated URLs)
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+
+# PostgreSQL credentials (required only for Docker Compose setup)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=ticket_booking
 ```
+
+- For **local PostgreSQL setup** (Option 1 in Quick Start), only `DATABASE_URL`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, and `ALLOWED_ORIGINS` are required. Update `DATABASE_URL` with your local database credentials.
+- For **Docker setup** (Option 2 in Quick Start), all variables including the `POSTGRES_*` ones are needed for the containerized database.
 
 For testing, create a separate `.env.test` file:
 
@@ -90,6 +158,8 @@ For testing, create a separate `.env.test` file:
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking_test"
 PORT=4000
 LOG_LEVEL=error
+NODE_ENV=test
+ALLOWED_ORIGINS="http://localhost:3000"
 ```
 
 ## Database Setup
