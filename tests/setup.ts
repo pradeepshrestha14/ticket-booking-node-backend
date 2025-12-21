@@ -10,13 +10,13 @@ dotenv.config({
 // import { prisma } from "../src/db/prisma";
 
 beforeAll(async () => {
-  //   await prisma.$connect();
+  // Global setup if needed
 });
 
 afterEach(async () => {
-  //   jest.clearAllMocks();
+  jest.clearAllMocks();
 });
 
 afterAll(async () => {
-  //   await prisma.$disconnect();
+  // Global teardown if needed
 });

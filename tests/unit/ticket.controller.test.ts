@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 import request from "supertest";
 import express from "express";
 import {
@@ -16,10 +18,7 @@ describe("TicketController", () => {
   };
 
   app.get("/tickets", getAllTicketsController(mockService as TicketService));
-  app.post(
-    "/tickets/book",
-    bookTicketsController(mockService as TicketService),
-  );
+  app.post("/tickets/book", bookTicketsController(mockService as TicketService));
 
   it("GET /tickets", async () => {
     mockService.getAllTickets.mockResolvedValue([]);
@@ -37,9 +36,7 @@ describe("TicketController", () => {
       remainingQuantity: 8,
     });
 
-    const res = await request(app)
-      .post("/tickets/book")
-      .send({ tier: "GA", quantity: 2 });
+    const res = await request(app).post("/tickets/book").send({ tier: "GA", quantity: 2 });
 
     expect(res.status).toBe(201);
     expect(res.body.data.bookedQuantity).toBe(2);
@@ -91,11 +88,7 @@ describe("TicketController - error handling (unit)", () => {
 
     const controller = bookTicketsController(mockService as TicketService);
 
-    await controller(
-      { body: { tier: "GA", quantity: 100 } } as Request,
-      res,
-      next,
-    );
+    await controller({ body: { tier: "GA", quantity: 100 } } as Request, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();

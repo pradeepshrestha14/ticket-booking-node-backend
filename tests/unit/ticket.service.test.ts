@@ -38,6 +38,7 @@ describe("TicketService - unit", () => {
     });
 
     const result = await service.bookTickets({
+      userId: "test-user-123",
       tier: TicketTier.GA,
       quantity: 3,
     });
@@ -51,6 +52,7 @@ describe("TicketService - unit", () => {
 
     await expect(
       service.bookTickets({
+        userId: "test-user-123",
         tier: TicketTier.GA,
         quantity: 100,
       }),

@@ -51,9 +51,7 @@ describe("TicketRepository (integration)", () => {
   it("should throw when tier does not exist", async () => {
     await prisma.ticketInventory.deleteMany();
 
-    await expect(repo.findByTier(TicketTier.GA)).rejects.toThrow(
-      "Ticket tier not found",
-    );
+    await expect(repo.findByTier(TicketTier.GA)).rejects.toThrow("Ticket tier not found");
   });
 
   it("should decrement quantity when enough tickets exist", async () => {

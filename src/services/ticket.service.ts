@@ -16,7 +16,7 @@ export const createTicketService = (
   };
 
   const bookTickets = async (payload: BookTicketsRequestDto): Promise<BookTicketsResponseDTO> => {
-    const { tier, quantity } = payload;
+    const { userId, tier, quantity } = payload;
 
     return prisma.$transaction(async (tx) => {
       const repo = repoFactory(tx); // transactional repo
@@ -34,6 +34,16 @@ export const createTicketService = (
         ]);
         throw err;
       }
+
+      // Create booking record with user ID
+      await tx.booking.create({
+        data: {
+          userId,
+          tier,
+          quantity,
+          status: "confirmed",
+        },
+      });
 
       const updatedTicket = await repo.findByTier(tier);
 
