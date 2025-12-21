@@ -71,3 +71,127 @@ npm install
 # or
 yarn install
 ```
+
+## Environment Variables
+
+Create a `.env` file in the root directory and add the following variables:
+
+```env
+PORT=4000
+DATABASE_URL="postgresql://username:password@localhost:5432/ticket_booking_db"
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+
+```
+
+## Database Setup
+
+1. Ensure PostgreSQL is running and create a database named `ticket_booking_db`.
+
+2. Run Prisma migrations to set up the database schema:
+
+```bash
+npm run prisma:migrate
+```
+
+3. Generate the Prisma client:
+
+```bash
+npm run prisma:generate
+```
+
+4. (Optional) Seed the database with initial data:
+
+```bash
+npm run prisma:seed
+```
+
+## Running the App
+
+### Development Mode
+
+```bash
+npm run dev
+```
+
+The server will start on `http://localhost:4000` with hot reloading enabled.
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+## API Endpoints
+
+### Health Check
+
+- **GET** `/health` - Check server status
+
+### Tickets
+
+- **GET** `/api/tickets` - Get all available tickets
+- **POST** `/api/tickets/book` - Book tickets
+
+#### Book Tickets Request Body
+
+```json
+{
+  "tier": "VIP" | "FRONT_ROW" | "GA",
+  "quantity": 2
+}
+```
+
+## Error Handling
+
+The application uses structured error handling with custom `AppError` class. Errors are caught by the global error handler middleware, which returns consistent JSON responses with appropriate HTTP status codes.
+
+Common error types:
+
+- Validation errors (400)
+- Not found errors (404)
+- Internal server errors (500)
+
+## Testing
+
+Run the test suite with coverage:
+
+```bash
+npm test
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+The project uses Jest with TypeScript support. Tests are located in the `tests/` directory.
+
+## Project Structure
+
+```
+ticket-booking-node-backend/
+├── src/
+│   ├── app.ts                 # Express app configuration
+│   ├── server.ts              # Server entry point
+│   ├── config/                # Configuration files
+│   ├── constants/             # Application constants
+│   ├── controllers/           # Route handlers
+│   ├── db/                    # Database connection and seeds
+│   ├── dtos/                  # Data transfer objects
+│   ├── generated/             # Prisma generated client
+│   ├── middlewares/           # Express middlewares
+│   ├── repositories/          # Data access layer
+│   ├── routes/                # API routes
+│   ├── services/              # Business logic
+│   ├── utils/                 # Utility functions
+│   └── validation/            # Input validation schemas
+├── tests/                     # Test files
+├── prisma/                    # Database schema and migrations
+├── coverage/                  # Test coverage reports
+├── package.json
+├── tsconfig.json
+├── jest.config.ts
+└── README.MD
+```
