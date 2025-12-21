@@ -18,7 +18,7 @@
  * File: src/utils/errors/AppError.ts
  */
 
-import { ERROR_CODES, ErrorCode, ErrorName, HTTP_STATUS, HttpStatusCode } from "../../constants";
+import { ERROR_CODES, ErrorCode, ErrorName, HTTP_STATUS, HttpStatusCode } from "@/constants";
 
 export class AppError extends Error {
   public readonly status: HttpStatusCode;

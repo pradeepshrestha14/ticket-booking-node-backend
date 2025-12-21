@@ -1,6 +1,6 @@
-import { TicketResponseDTO } from "../dtos/ticket.dto";
-import { PrismaClient, TicketTier, Prisma } from "../generated/prisma";
-import { NotFoundError } from "../utils";
+import { TicketResponseDTO } from "@/dtos/ticket.dto";
+import { PrismaClient, TicketTier, Prisma } from "@/generated/prisma";
+import { NotFoundError } from "@/utils";
 
 export interface ITicketRepository {
   findAll(): Promise<TicketResponseDTO[]>;

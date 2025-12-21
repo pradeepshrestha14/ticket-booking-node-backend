@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { createTicketService } from "../services/ticket.service";
-import { BookTicketsRequestDto, BookTicketsResponseDTO } from "../dtos/book-ticket.dto";
-import { TicketResponseDTO } from "../dtos/ticket.dto";
+import { createTicketService } from "@/services/ticket.service";
+import { BookTicketsRequestDto, BookTicketsResponseDTO } from "@/dtos/book-ticket.dto";
+import { TicketResponseDTO } from "@/dtos/ticket.dto";
 
 export type TicketService = ReturnType<typeof createTicketService>;
 

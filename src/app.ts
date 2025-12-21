@@ -22,9 +22,9 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 
-import ticketsRouter from "./routes/ticket.routes";
-import { httpLogger, NotFoundError } from "./utils";
-import { globalErrorHandler } from "./middlewares/error-handler";
+import ticketsRouter from "@/routes/ticket.routes";
+import { httpLogger, NotFoundError } from "@/utils";
+import { globalErrorHandler } from "@/middlewares/error-handler";
 
 export const createApp = (): Application => {
   const app = express();

@@ -1,8 +1,8 @@
-import { TicketRepository } from "../repositories/ticket.repository";
-import { prisma, PrismaClient, Prisma } from "../db/prisma";
-import { BookTicketsRequestDto, BookTicketsResponseDTO } from "../dtos/book-ticket.dto";
-import { TicketResponseDTO } from "../dtos/ticket.dto";
-import { NotFoundError, UnprocessableEntityError } from "../utils/errors";
+import { TicketRepository } from "@/repositories/ticket.repository";
+import { prisma, PrismaClient, Prisma } from "@/db/prisma";
+import { BookTicketsRequestDto, BookTicketsResponseDTO } from "@/dtos/book-ticket.dto";
+import { TicketResponseDTO } from "@/dtos/ticket.dto";
+import { NotFoundError, UnprocessableEntityError } from "@/utils/errors";
 
 /**
  * Factory function to create service with DI

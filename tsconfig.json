@@ -6,7 +6,22 @@
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@/controllers/*": ["controllers/*"],
+      "@/services/*": ["services/*"],
+      "@/repositories/*": ["repositories/*"],
+      "@/routes/*": ["routes/*"],
+      "@/middlewares/*": ["middlewares/*"],
+      "@/dtos/*": ["dtos/*"],
+      "@/utils/*": ["utils/*"],
+      "@/constants/*": ["constants/*"],
+      "@/validation/*": ["validation/*"],
+      "@/db/*": ["db/*"],
+      "@/generated/*": ["generated/*"]
+    }
   },
   "exclude": ["node_modules", "tests"]
 }

@@ -1,4 +1,4 @@
-import { TicketTier } from "../db/prisma";
+import { TicketTier } from "@/db/prisma";
 
 export type TicketResponseDTO = {
   tier: TicketTier;

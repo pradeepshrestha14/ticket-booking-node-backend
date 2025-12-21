@@ -129,6 +129,8 @@ Create a `.env` file in the root directory based on `.env.backup`. The following
 
 ```env
 # Database connection URL
+# For local development: use localhost
+# For Docker: use db (the database service name)
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking"
 
 # Server port
@@ -148,6 +150,23 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=ticket_booking
 ```
+
+### ⚠️ **Important: Database URL Configuration**
+
+**When running locally** (Option 1):
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking"
+```
+
+**When running with Docker** (Option 2):
+```env
+DATABASE_URL="postgresql://postgres:postgres@db:5432/ticket_booking"
+```
+
+**Why `db` instead of `localhost` in Docker?**
+- `db` is the **service name** defined in `docker-compose.yml`
+- Docker's internal networking resolves `db` to the database container's IP
+- `localhost` would point to the app container itself, not the database
 
 - For **local PostgreSQL setup** (Option 1 in Quick Start), only `DATABASE_URL`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, and `ALLOWED_ORIGINS` are required. Update `DATABASE_URL` with your local database credentials.
 - For **Docker setup** (Option 2 in Quick Start), all variables including the `POSTGRES_*` ones are needed for the containerized database.
@@ -340,3 +359,36 @@ ticket-booking-node-backend/
 ├── jest.config.ts
 └── README.MD
 ```
+
+## Absolute Path Imports
+
+This project uses absolute path imports with the `@/` alias for cleaner and more maintainable code. The configuration is set up in `tsconfig.json` and `jest.config.ts`.
+
+### Import Examples
+
+Instead of relative imports like:
+```typescript
+import { createTicketService } from "../services/ticket.service";
+import { BookTicketsRequestDto } from "../dtos/book-ticket.dto";
+```
+
+Use absolute imports:
+```typescript
+import { createTicketService } from "@/services/ticket.service";
+import { BookTicketsRequestDto } from "@/dtos/book-ticket.dto";
+```
+
+### Available Path Aliases
+
+- `@/*` - Root of src directory
+- `@/controllers/*` - Controllers directory
+- `@/services/*` - Services directory
+- `@/repositories/*` - Repositories directory
+- `@/routes/*` - Routes directory
+- `@/middlewares/*` - Middlewares directory
+- `@/dtos/*` - DTOs directory
+- `@/utils/*` - Utils directory
+- `@/constants/*` - Constants directory
+- `@/validation/*` - Validation directory
+- `@/db/*` - Database directory
+- `@/generated/*` - Generated files directory

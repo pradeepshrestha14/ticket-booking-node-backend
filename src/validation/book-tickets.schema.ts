@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TicketTier } from "../db/prisma";
+import { TicketTier } from "@/db/prisma";
 
 export const bookTicketsSchema = z.object({
   userId: z.string().min(1, "User ID is required"), // Mock user identifier

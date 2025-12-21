@@ -1,5 +1,5 @@
 import { AppError } from "./AppError";
-import { HTTP_STATUS, ERROR_CODES, ERROR_NAMES } from "../../constants";
+import { HTTP_STATUS, ERROR_CODES, ERROR_NAMES } from "@/constants";
 
 /*
  * Specific HTTP Error Classes

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
-import { HTTP_STATUS, ERROR_NAMES, ERROR_CODES } from "../constants";
-import { AppError, logger } from "../utils";
+import { HTTP_STATUS, ERROR_NAMES, ERROR_CODES } from "@/constants";
+import { AppError, logger } from "@/utils";
 
 /**
  * Global Express error handler

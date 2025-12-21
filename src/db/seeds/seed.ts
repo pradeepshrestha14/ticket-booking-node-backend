@@ -13,8 +13,8 @@
  *   npx prisma db seed
  */
 
-import { prisma } from "../prisma";
-import { TicketTier } from "../prisma";
+import { prisma } from "@/db/prisma";
+import { TicketTier } from "@/db/prisma";
 
 async function main() {
   await prisma.ticketInventory.upsert({

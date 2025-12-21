@@ -16,6 +16,6 @@ COPY . .
 # Expose port
 EXPOSE 4000
 
-# Start dev server with ts-node-dev
-CMD ["npx", "ts-node-dev", "--respawn", "--transpile-only", "src/server.ts"]
+# Start dev server with ts-node-dev (using same config as package.json)
+CMD ["npx", "ts-node-dev", "--project", "tsconfig.dev.json", "--require", "tsconfig-paths/register", "--files", "--respawn", "--transpile-only", "src/server.ts"]
 
