@@ -1,4 +1,4 @@
-// Controller integration tests only verify correct HTTP behavior and middleware wiring.”
+// Controller integration tests only verify correct HTTP behavior and middleware wiring."
 // verify concurrency at the repository level and via stress tests.
 
 import request from "supertest";
@@ -28,7 +28,7 @@ afterAll(async () => {
 it("POST /api/tickets/book → 201 success", async () => {
   const res = await request(app)
     .post("/api/tickets/book")
-    .send({ tier: "GA", quantity: 3 });
+    .send({ userId: "test-user-123", tier: "GA", quantity: 3 });
 
   expect(res.status).toBe(201);
   expect(res.body.success).toBe(true);
@@ -42,7 +42,7 @@ it("POST /api/tickets/book → 201 success", async () => {
 it("POST /api/tickets/book → 422 insufficient tickets", async () => {
   const res = await request(app)
     .post("/api/tickets/book")
-    .send({ tier: "GA", quantity: 100 });
+    .send({ userId: "test-user-456", tier: "GA", quantity: 100 });
 
   expect(res.status).toBe(422);
   expect(res.body.error.message).toBe("INSUFFICIENT_TICKETS");
@@ -57,9 +57,7 @@ it("POST /api/tickets/book → 400 validation error", async () => {
 });
 
 it("POST /api/tickets/book → 400 invalid tier field", async () => {
-  const res = await request(app)
-    .post("/api/tickets/book")
-    .send({ tier: "INVALID", quantity: 1 });
+  const res = await request(app).post("/api/tickets/book").send({ tier: "INVALID", quantity: 1 });
 
   expect(res.status).toBe(400);
 });

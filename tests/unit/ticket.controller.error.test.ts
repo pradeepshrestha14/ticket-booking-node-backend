@@ -47,11 +47,7 @@ describe("TicketController - error handling (unit)", () => {
 
     const controller = bookTicketsController(mockService as TicketService);
 
-    await controller(
-      { body: { tier: "GA", quantity: 100 } } as Request,
-      res,
-      next,
-    );
+    await controller({ body: { tier: "GA", quantity: 100 } } as Request, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();
