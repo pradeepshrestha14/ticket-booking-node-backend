@@ -30,6 +30,7 @@ model TicketInventory {
 
 model Booking {
   id         Int        @id @default(autoincrement())
+  userId     String     // Mock user identifier (UUID or simple string)
   tier       TicketTier
   quantity   Int
   status     String
