@@ -5,6 +5,8 @@
 A **Node.js + Express backend** for managing ticket booking operations.  
 Built with **TypeScript**, **Prisma**, and follows best practices for security, logging, validation, and error handling.
 
+**Design Decisions & Trade-offs**: For detailed architectural decisions, trade-offs, scalability considerations, and how this design achieves the assignment's availability, performance, and consistency requirements, see [`ARCHITECTURAL_DECISIONS.md`](./ARCHITECTURAL_DECISIONS.md).
+
 ---
 
 ## Table of Contents
@@ -80,7 +82,14 @@ Create a `.env` file in the root directory and add the following variables:
 PORT=4000
 DATABASE_URL="postgresql://username:password@localhost:5432/ticket_booking_db"
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+```
 
+For testing, create a separate `.env.test` file:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking_test"
+PORT=4000
+LOG_LEVEL=error
 ```
 
 ## Database Setup
@@ -103,6 +112,18 @@ npm run prisma:generate
 
 ```bash
 npm run prisma:seed
+```
+
+### Test Database Setup
+
+For running tests, create a separate test database:
+
+```bash
+# Create test database
+createdb ticket_booking_test
+
+# Run migrations on test database (ensure .env.test is configured)
+npm run prisma:migrate
 ```
 
 ## Running the App
@@ -137,6 +158,7 @@ npm start
 
 ```json
 {
+  "userId": "user-123", // Mock user identifier (string)
   "tier": "VIP" | "FRONT_ROW" | "GA",
   "quantity": 2
 }
@@ -154,7 +176,31 @@ Common error types:
 
 ## Testing
 
-Run the test suite with coverage:
+The project includes comprehensive unit and integration tests using Jest and Supertest.
+
+### Test Environment Setup
+
+Create a `.env.test` file in the root directory for test-specific configuration:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking_test"
+PORT=4000
+LOG_LEVEL=error
+```
+
+Ensure the test database `ticket_booking_test` exists and run migrations for it:
+
+```bash
+# Create test database (if not exists)
+createdb ticket_booking_test
+
+# Run migrations on test database
+npm run prisma:migrate
+```
+
+### Running Tests
+
+Run the full test suite with coverage:
 
 ```bash
 npm test
@@ -165,6 +211,35 @@ Run tests in watch mode:
 ```bash
 npm run test:watch
 ```
+
+Run unit tests only:
+
+```bash
+npm run test:unit
+```
+
+Run integration tests only:
+
+```bash
+npm run test:integration
+```
+
+Run tests with coverage report:
+
+```bash
+npm run test:coverage
+```
+
+Run tests for CI (single-threaded):
+
+```bash
+npm run test:ci
+```
+
+### Test Structure
+
+- **Unit Tests** (`tests/unit/`): Test individual functions, services, and controllers in isolation
+- **Integration Tests** (`tests/integration/`): Test API endpoints, database interactions, and end-to-end flows
 
 The project uses Jest with TypeScript support. Tests are located in the `tests/` directory.
 
