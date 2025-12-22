@@ -6,9 +6,18 @@ import { getAllTicketsController, bookTicketsController } from "@/controllers/ti
 import { validateRequest } from "@/middlewares/validate-request";
 import { bookTicketsSchema } from "@/validation/book-tickets.schema";
 
+/**
+ * Express router for ticket-related API endpoints.
+ * Handles ticket inventory retrieval and booking operations.
+ */
 const router = Router();
 
-// Repository factory (supports transactions)
+/**
+ * Factory function to create TicketRepository instances.
+ * Supports both regular and transactional database operations.
+ * @param tx Optional Prisma transaction client for atomic operations
+ * @returns Configured TicketRepository instance
+ */
 const repoFactory = (tx?: Prisma.TransactionClient | PrismaClient) =>
   new TicketRepository(tx ?? prisma);
 

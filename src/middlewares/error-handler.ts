@@ -4,7 +4,13 @@ import { HTTP_STATUS, ERROR_NAMES, ERROR_CODES } from "@/constants";
 import { AppError, logger } from "@/utils";
 
 /**
- * Global Express error handler
+ * Global Express error handler middleware.
+ * Handles all types of errors (operational, validation, database, etc.) and returns consistent JSON responses.
+ * Logs errors for monitoring and debugging.
+ * @param err The error object caught by Express
+ * @param _req Express request object (unused)
+ * @param res Express response object
+ * @param _next Express next function (unused - this is the final handler)
  */
 export function globalErrorHandler(
   err: unknown,

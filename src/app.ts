@@ -49,6 +49,11 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
+/**
+ * Factory function that creates and configures an Express application instance.
+ * Sets up all middleware, routes, error handling, and API documentation.
+ * @returns Configured Express Application instance ready to listen for requests
+ */
 export const createApp = (): Application => {
   const app = express();
 

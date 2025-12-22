@@ -5,11 +5,18 @@ import { TicketResponseDTO } from "@/dtos/ticket.dto";
 import { NotFoundError, UnprocessableEntityError } from "@/utils/errors";
 
 /**
- * Factory function to create service with DI
+ * Factory function to create ticket service with dependency injection.
+ * Provides business logic for ticket operations with transactional support.
+ * @param repoFactory Function that creates TicketRepository instances (supports transactions)
+ * @returns Object containing ticket service methods
  */
 export const createTicketService = (
   repoFactory: (tx?: Prisma.TransactionClient | PrismaClient) => TicketRepository,
 ) => {
+  /**
+   * Retrieves all available tickets from inventory.
+   * @returns Promise<TicketResponseDTO[]> Array of ticket inventory data
+   */
   const getAllTickets = async (): Promise<TicketResponseDTO[]> => {
     const repo = repoFactory();
     return repo.findAll();

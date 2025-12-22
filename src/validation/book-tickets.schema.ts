@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { TicketTier } from "@/db/prisma";
 
+/**
+ * Zod validation schema for ticket booking requests.
+ * Validates the structure and constraints of booking data.
+ */
 export const bookTicketsSchema = z.object({
   userId: z.string().min(1, "User ID is required"), // Mock user identifier
   tier: z.enum(Object.values(TicketTier)), // replaces deprecated z.nativeEnum
@@ -10,4 +14,8 @@ export const bookTicketsSchema = z.object({
     .positive({ message: "Quantity must be greater than 0" }),
 });
 
+/**
+ * Type inference from the bookTicketsSchema.
+ * Represents the validated structure of ticket booking requests.
+ */
 export type BookTicketsRequestDto = z.infer<typeof bookTicketsSchema>;

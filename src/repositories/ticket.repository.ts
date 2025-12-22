@@ -16,7 +16,16 @@ export interface ITicketRepository {
 }
 
 export class TicketRepository implements ITicketRepository {
+  /**
+   * Creates a new TicketRepository instance.
+   * @param db Prisma client or transaction client for database operations
+   */
   constructor(private readonly db: PrismaClient | Prisma.TransactionClient) {}
+
+  /**
+   * Retrieves all ticket inventory records.
+   * @returns Promise<TicketResponseDTO[]> Array of all ticket inventory data
+   */
   async findAll(): Promise<TicketResponseDTO[]> {
     return this.db.ticketInventory.findMany({
       select: {
@@ -28,6 +37,12 @@ export class TicketRepository implements ITicketRepository {
     });
   }
 
+  /**
+   * Finds a specific ticket tier and returns its availability.
+   * @param tier The ticket tier to search for
+   * @returns Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity">> Ticket data with tier and available quantity
+   * @throws NotFoundError if the ticket tier doesn't exist
+   */
   async findByTier(tier: TicketTier) {
     const ticket = await this.db.ticketInventory.findUnique({
       where: { tier },
