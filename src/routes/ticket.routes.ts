@@ -1,14 +1,23 @@
 import { Router } from "express";
-import { Prisma, prisma, PrismaClient } from "../db/prisma";
-import { TicketRepository } from "../repositories/ticket.repository";
-import { createTicketService } from "../services/ticket.service";
-import { getAllTicketsController, bookTicketsController } from "../controllers/ticket.controller";
-import { validateRequest } from "../middlewares/validate-request";
-import { bookTicketsSchema } from "../validation/book-tickets.schema";
+import { Prisma, prisma, PrismaClient } from "@/db/prisma";
+import { TicketRepository } from "@/repositories/ticket.repository";
+import { createTicketService } from "@/services/ticket.service";
+import { getAllTicketsController, bookTicketsController } from "@/controllers/ticket.controller";
+import { validateRequest } from "@/middlewares/validate-request";
+import { bookTicketsSchema } from "@/validation/book-tickets.schema";
 
+/**
+ * Express router for ticket-related API endpoints.
+ * Handles ticket inventory retrieval and booking operations.
+ */
 const router = Router();
 
-// Repository factory (supports transactions)
+/**
+ * Factory function to create TicketRepository instances.
+ * Supports both regular and transactional database operations.
+ * @param tx Optional Prisma transaction client for atomic operations
+ * @returns Configured TicketRepository instance
+ */
 const repoFactory = (tx?: Prisma.TransactionClient | PrismaClient) =>
   new TicketRepository(tx ?? prisma);
 
@@ -16,7 +25,81 @@ const repoFactory = (tx?: Prisma.TransactionClient | PrismaClient) =>
 const ticketService = createTicketService(repoFactory);
 
 // Routes
+/**
+ * @swagger
+ * /api/tickets:
+ *   get:
+ *     summary: Get all available tickets
+ *     tags: [Tickets]
+ *     responses:
+ *       200:
+ *         description: List of available tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   tier:
+ *                     type: string
+ *                     enum: [VIP, FRONT_ROW, GA]
+ *                   price:
+ *                     type: number
+ *                   availableQuantity:
+ *                     type: integer
+ *                   totalQuantity:
+ *                     type: integer
+ */
 router.get("/", getAllTicketsController(ticketService));
+
+/**
+ * @swagger
+ * /api/tickets/book:
+ *   post:
+ *     summary: Book tickets
+ *     tags: [Tickets]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - tier
+ *               - quantity
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: Unique user identifier
+ *               tier:
+ *                 type: string
+ *                 enum: [VIP, FRONT_ROW, GA]
+ *                 description: Ticket tier to book
+ *               quantity:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Number of tickets to book
+ *     responses:
+ *       200:
+ *         description: Booking successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 bookingId:
+ *                   type: string
+ *                 remainingQuantity:
+ *                   type: integer
+ *       400:
+ *         description: Bad request - invalid input or insufficient tickets
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/book", validateRequest(bookTicketsSchema), bookTicketsController(ticketService));
 
 export default router;

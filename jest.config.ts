@@ -33,6 +33,11 @@ const config: Config = {
   },
 
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
+
+  // Module name mapping for absolute imports
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
 };
 
 export default config;
