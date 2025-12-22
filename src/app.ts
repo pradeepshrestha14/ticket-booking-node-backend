@@ -21,10 +21,33 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
 
 import ticketsRouter from "@/routes/ticket.routes";
 import { httpLogger, NotFoundError } from "@/utils";
 import { globalErrorHandler } from "@/middlewares/error-handler";
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Ticket Booking System API",
+      version: "1.0.0",
+      description: "API for managing ticket bookings",
+    },
+    servers: [
+      {
+        url: `http://localhost:${process.env.PORT || 4000}`,
+        description: "Development server",
+      },
+    ],
+  },
+  apis: ["./src/routes/*.ts"], // Path to the API docs
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 export const createApp = (): Application => {
   const app = express();
@@ -78,6 +101,11 @@ export const createApp = (): Application => {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // ------------------------
+  // Swagger Documentation
+  // ------------------------
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // ------------------------
   // 404 Handler
