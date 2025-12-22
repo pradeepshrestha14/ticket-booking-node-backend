@@ -15,6 +15,14 @@ export const createTicketService = (
     return repo.findAll();
   };
 
+  /**
+   * Books tickets with concurrency control and transactional integrity.
+   * Uses database transactions and row-level locking to prevent double-booking.
+   * @param payload Booking request containing userId, tier, and quantity
+   * @returns Promise<BookTicketsResponseDTO> Booking confirmation with remaining quantity
+   * @throws UnprocessableEntityError if insufficient tickets available
+   * @throws NotFoundError if ticket tier doesn't exist
+   */
   const bookTickets = async (payload: BookTicketsRequestDto): Promise<BookTicketsResponseDTO> => {
     const { userId, tier, quantity } = payload;
 

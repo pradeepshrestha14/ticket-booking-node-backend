@@ -5,6 +5,13 @@ import { NotFoundError } from "@/utils";
 export interface ITicketRepository {
   findAll(): Promise<TicketResponseDTO[]>;
   findByTier(tier: TicketTier): Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity">>;
+  /**
+   * Atomically decrements ticket quantity with row-level locking to prevent race conditions.
+   * Uses SELECT ... FOR UPDATE to lock the inventory row during the operation.
+   * @param tier The ticket tier to decrement
+   * @param quantity The number of tickets to decrement
+   * @returns Promise<{ count: number }> - count = 1 if successful, 0 if insufficient tickets
+   */
   decrementQuantity(tier: TicketTier, quantity: number): Promise<Prisma.BatchPayload>;
 }
 
@@ -36,18 +43,34 @@ export class TicketRepository implements ITicketRepository {
   }
 
   async decrementQuantity(tier: TicketTier, quantity: number) {
-    return this.db.ticketInventory.updateMany({
-      where: {
-        tier,
-        availableQuantity: {
-          gte: quantity, // critical concurrency guard
-        },
-      },
+    // First, lock the row and check availability
+    const ticket = await this.db.$queryRaw<{ availableQuantity: number }[]>`
+      SELECT "availableQuantity" FROM "TicketInventory" 
+      WHERE tier = ${tier} 
+      FOR UPDATE
+    `;
+
+    if (ticket.length === 0) {
+      throw new NotFoundError("Ticket tier not found");
+    }
+
+    const currentQuantity = ticket[0].availableQuantity;
+
+    if (currentQuantity < quantity) {
+      // Return a payload indicating failure
+      return { count: 0 };
+    }
+
+    // Now decrement
+    const result = await this.db.ticketInventory.updateMany({
+      where: { tier },
       data: {
         availableQuantity: {
           decrement: quantity,
         },
       },
     });
+
+    return result;
   }
 }
