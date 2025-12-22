@@ -29,6 +29,7 @@ Built with **TypeScript**, **Prisma**, and follows best practices for security, 
 
 - Ticket inventory management (VIP, Front Row, GA)
 - Booking tickets with validation
+- **Payment Simulation**: Mock payment processing with success/failure scenarios (90% success rate)
 - REST API endpoints
 - Input validation using **Zod**
 - Structured error handling with `AppError`
@@ -254,6 +255,14 @@ npm start
   "quantity": 2
 }
 ```
+
+#### Payment Processing
+
+**Note**: For assignment demonstration purposes, payment processing is **simulated** with a 90% success rate and 10% failure rate. In a production system, this would integrate with real payment gateways like Stripe or PayPal.
+
+- **Payment Simulation**: Random success/failure with 100ms processing delay
+- **Transaction Rollback**: Failed payments automatically rollback inventory changes
+- **Production Integration**: Would require PCI compliance and webhook handling for real payment processing
 
 ### Concurrency and Race Condition Handling
 

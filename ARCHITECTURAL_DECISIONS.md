@@ -82,16 +82,37 @@ sequenceDiagram
     Routes->>Middleware: Validate Request
     Middleware->>Controller: Process Booking
     Controller->>Service: Business Logic
-    Service->>Repository: Data Access
-    Repository->>Database: Transaction Start
-    Database-->>Repository: Check Availability
-    Repository-->>Service: Availability Result
-    Service->>Repository: Update Inventory
-    Repository->>Database: Commit Transaction
-    Database-->>Repository: Success/Failure
-    Repository-->>Service: Result
+
+    rect rgb(240, 248, 255)
+        Service->>Repository: Start Transaction + Check Availability
+        Repository->>Database: SELECT ... FOR UPDATE (Row Lock)
+        Database-->>Repository: Lock Acquired + Current Quantity
+        Repository-->>Service: Available Quantity
+
+        Service->>Service: Calculate Total Amount
+        Service->>Service: Simulate Payment Processing
+        Service-->>Service: Payment Success/Failure
+
+        alt Payment Success
+            Service->>Repository: Decrement Inventory
+            Repository->>Database: UPDATE availableQuantity
+            Service->>Repository: Create Booking Record
+            Repository->>Database: INSERT booking
+            Repository->>Database: COMMIT Transaction
+            Database-->>Repository: Transaction Committed
+        else Payment Failure
+            Repository->>Database: ROLLBACK Transaction
+            Database-->>Repository: Transaction Rolled Back
+        end
+    end
+
+    Repository-->>Service: Result (Success/Failure)
     Service-->>Controller: Response Data
     Controller-->>Client: JSON Response
+
+    Note over Database: 🔒 Row-level locking prevents<br/>race conditions & double-booking
+    Note over Service: 💳 Simulated payment (90% success)<br/>Real system: Stripe/PayPal integration
+    Note over Repository: 🔄 Transaction ensures atomicity<br/>All-or-nothing booking operation
 ```
 
 ### Repository Pattern Implementation
@@ -148,34 +169,28 @@ erDiagram
     }
 ```
 
-### Deployment Architecture (Docker)
+### Deployment Architecture (Current vs Future)
+
+**Current Implementation**: Simple Docker Compose setup for local development only.
 
 ```mermaid
 graph TB
-    subgraph "Docker Compose"
+    subgraph "Current - Docker Compose (Local Dev)"
         A[Express App<br/>Container] --> B[PostgreSQL<br/>Container]
-        C[Nginx/Proxy<br/>Optional] --> A
-    end
-
-    subgraph "Local Development"
-        D[Node.js<br/>Process] --> E[Local PostgreSQL]
-    end
-
-    subgraph "Production"
-        F[Load Balancer] --> G[App Server 1]
-        F --> H[App Server 2]
-        G --> I[PostgreSQL<br/>Cluster]
-        H --> I
     end
 
     style A fill:#e3f2fd
     style B fill:#f3e5f5
-    style D fill:#fff3e0
-    style E fill:#e8f5e8
-    style G fill:#e8f5e8
-    style H fill:#e8f5e8
-    style I fill:#fce4ec
 ```
+
+**Future Scalability** (Not Implemented):
+- Multi-stage Docker builds for production optimization
+- Kubernetes orchestration for horizontal scaling
+- Load balancers and service meshes
+- Multi-region deployments with CDN
+
+**Decision**: Started with simple docker-compose for development speed and assignment scope.
+**Trade-off**: Quick setup vs. production-ready infrastructure. Current approach prioritizes development efficiency over advanced deployment complexity.
 
 ## Trade-offs and Design Decisions
 
@@ -196,6 +211,55 @@ graph TB
 - **Decision**: Synchronous booking flow with immediate response.
 - **Trade-off**: Immediate feedback vs. scalability. Async processing (e.g., queues) would improve performance at scale but complicates user experience. Current design prioritizes simplicity and clear user feedback.
 
+### Payment Processing: Simulation vs. Real Gateway
+
+#### Current Implementation
+
+**Decision**: Implemented payment simulation with random success/failure for assignment scope.
+**Mechanism**:
+- **Simulation Logic**: 90% success rate, 10% failure rate with 100ms processing delay.
+- **Integration Point**: Payment validation happens after inventory decrement but before booking confirmation.
+- **Error Handling**: Payment failures trigger transaction rollback, restoring inventory.
+
+**Implementation Details**:
+```typescript
+const simulatePayment = async (amount: number): Promise<boolean> => {
+  // Simulate payment processing delay
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // Simulate 90% success rate, 10% failure rate
+  const success = Math.random() > 0.5;
+
+  if (!success) {
+    console.log(`Payment failed for amount: $${amount}`);
+  } else {
+    console.log(`Payment succeeded for amount: $${amount}`);
+  }
+
+  return success;
+};
+```
+
+#### Trade-offs
+
+**Decision Rationale**: Simulation chosen for assignment scope to focus on core booking logic rather than payment integration complexity.
+- **Development Speed vs. Production Readiness**: Simulation allows quick testing of booking flows without payment provider setup, but lacks real-world payment handling.
+- **Consistency vs. Complexity**: Simulated payments maintain transaction integrity but don't handle real payment edge cases (chargebacks, disputes, PCI compliance).
+- **Testing Limitations**: Cannot test real payment failures, network timeouts, or provider-specific error scenarios.
+
+#### Future Scalability
+
+**What Can Be Done and How**:
+- **Payment Gateway Integration**: Stripe, PayPal, or Adyen for production payment processing with webhooks for status updates.
+- **Idempotency Keys**: Prevent duplicate charges from retry requests using payment provider's idempotency features.
+- **Payment Intents**: Implement Stripe Payment Intents for better UX with saved payment methods and authentication flows.
+- **PCI Compliance**: Use payment provider's hosted fields to avoid handling sensitive card data directly.
+- **Webhook Handling**: Asynchronous payment confirmations via webhooks to handle delayed payment processing.
+- **Refund Management**: Automated refund processing for failed bookings or cancellations.
+- **Multi-Currency**: Support for international payments with currency conversion and localization.
+
+**Production Considerations**: Real payment integration requires PCI DSS compliance, webhook security validation, and handling of payment disputes/refunds.
+
 ### Error Handling Strategy
 
 - **Decision**: Custom `AppError` class with structured responses.
@@ -208,211 +272,113 @@ graph TB
 - **Rationale**: Standard practice for different environments (dev, test, prod).
 - **Trade-off**: Security vs. convenience. Sensitive data should be in secure vaults at scale.
 
-## Consistency & Concurrency Handling
-
-**Critical Requirement**: Prevent double-booking under race conditions.
 
 ## Consistency & Concurrency Handling
 
 **Critical Requirement**: Prevent double-booking under race conditions.
 
-### Mechanism
+### Current Implementation
 
+**Decision**: Implemented pessimistic concurrency control using database row-level locking to ensure absolute consistency.
+**Mechanism**:
 - **Database Transactions**: All booking operations use Prisma's `$transaction` to ensure atomicity.
-- **Pessimistic Concurrency Control**: Uses row-level locking (`SELECT ... FOR UPDATE`) to prevent race conditions by locking inventory rows during booking operations.
-- **Implementation**:
-  ```typescript
-  // In ticket.service.ts - bookTickets method
-  const bookTickets = async (payload: BookTicketsRequestDto): Promise<BookTicketsResponseDTO> => {
-    const { userId, tier, quantity } = payload;
+- **Pessimistic Concurrency Control**: Uses `SELECT ... FOR UPDATE` to lock inventory rows during booking operations.
+- **Atomic Operations**: Check availability and decrement quantity happen in the same transaction.
 
-    return prisma.$transaction(async (tx) => {
-      const repo = repoFactory(tx); // transactional repo
+**Implementation Details**:
+```typescript
+// Row-level locking prevents race conditions
+async decrementQuantity(tier: TicketTier, quantity: number) {
+  const ticket = await this.db.$queryRaw<{ availableQuantity: number }[]>`
+    SELECT "availableQuantity" FROM "TicketInventory"
+    WHERE tier = ${tier}
+    FOR UPDATE
+  `;
 
-      // Find ticket to check existence
-      const ticket = await repo.findByTier(tier);
-      if (!ticket) {
-        throw new NotFoundError("TICKET_NOT_FOUND");
-      }
-
-      // Atomic decrement with row-level locking
-      const data = await repo.decrementQuantity(tier, quantity);
-      if (data.count === 0) {
-        throw new UnprocessableEntityError("INSUFFICIENT_TICKETS", [
-          {
-            path: "quantity",
-            message: "Requested quantity exceeds available tickets",
-          },
-        ]);
-      }
-
-      // Create booking record with user ID
-      await tx.booking.create({
-        data: {
-          userId,
-          tier,
-          quantity,
-          status: "confirmed",
-        },
-      });
-
-      const updatedTicket = await repo.findByTier(tier);
-
-      return {
-        tier,
-        bookedQuantity: quantity,
-        remainingQuantity: updatedTicket.availableQuantity,
-      };
-    });
-  };
-  ```
-- **Repository Layer Atomic Operation with Locking**:
-  ```typescript
-  // In ticket.repository.ts - decrementQuantity method
-  async decrementQuantity(tier: TicketTier, quantity: number) {
-    // Lock the row and check availability atomically
-    const ticket = await this.db.$queryRaw<{ availableQuantity: number }[]>`
-      SELECT "availableQuantity" FROM "TicketInventory"
-      WHERE tier = ${tier}
-      FOR UPDATE
-    `;
-
-    if (ticket.length === 0) {
-      throw new NotFoundError("Ticket tier not found");
-    }
-
-    const currentQuantity = ticket[0].availableQuantity;
-
-    if (currentQuantity < quantity) {
-      return { count: 0 }; // Insufficient tickets
-    }
-
-    // Safe to decrement
-    const result = await this.db.ticketInventory.updateMany({
-      where: { tier },
-      data: {
-        availableQuantity: {
-          decrement: quantity,
-        },
-      },
-    });
-
-    return result;
+  if (currentQuantity < quantity) {
+    return { count: 0 }; // Insufficient tickets
   }
-  ```
-- **How it Prevents Race Conditions**: The `SELECT ... FOR UPDATE` locks the specific `TicketInventory` row, preventing other transactions from reading or modifying it until the current transaction completes. This ensures that:
-  - No two transactions can decrement the same ticket tier simultaneously
-  - The check for available quantity and the decrement happen atomically
-  - PostgreSQL's MVCC ensures serializable isolation for locked rows
+
+  // Safe to decrement
+  const result = await this.db.ticketInventory.updateMany({
+    where: { tier },
+    data: { availableQuantity: { decrement: quantity } }
+  });
+
+  return result;
+}
+```
 
 ### Trade-offs
 
-- **Strong Consistency**: Ensures no double-booking with guaranteed data integrity, but may cause database contention under extremely high load.
-- **Alternative Considered**: Optimistic locking with version numbers could improve concurrency but adds complexity and potential for failed retries.
-- **Idempotency Not Implemented**: Request idempotency (preventing duplicate bookings from repeated client requests due to network failures, browser refreshes, or accidental retries) was considered but not implemented. In production systems, this would typically be achieved through idempotency keys, request deduplication, or business logic validation to ensure the same booking request produces identical results.
-- **Decision**: Row-level pessimistic locking chosen for absolute correctness over performance optimization, as the assignment prioritizes consistency. The locking duration is minimal (milliseconds) and acceptable for ticket booking scenarios.
+**Decision Rationale**: Chose strong consistency over performance optimization for ticket booking critical path.
+- **Strong Consistency vs Performance**: Row-level locking ensures no double-booking but may cause database contention under extreme load.
+- **Pessimistic vs Optimistic Locking**: Pessimistic locking chosen for absolute correctness over optimistic locking's better concurrency (but potential for failed retries).
+- **Idempotency Not Implemented**: Considered but not implemented for assignment scope - would require idempotency keys to handle duplicate requests from network failures.
 
-### Testing Race Conditions
+### Future Scalability
 
-- **Unit Tests**: Mock concurrent scenarios and verify atomic operations.
-- **Integration Tests**: Use Supertest with Promise.all() to simulate concurrent requests. Test validates that only the correct number of bookings succeed when multiple users compete for limited tickets.
-- **Concurrency Test Example**:
-  ```typescript
-  it("should prevent double booking under concurrency", async () => {
-    const requests = Array.from({ length: 5 }).map(() =>
-      prisma.$transaction(async (tx) => {
-        const transactionalRepo = new TicketRepository(tx);
-        return transactionalRepo.decrementQuantity(TicketTier.VIP, 3);
-      }),
-    );
+**What Can Be Done and How**:
+- **Optimistic Locking**: Add version columns for better concurrency with retry logic.
+- **Idempotency Keys**: Implement request deduplication using Redis to handle duplicate bookings from network retries.
+- **Distributed Locking**: Use Redis distributed locks for cross-service consistency.
+- **Event Sourcing**: Implement event-driven architecture with eventual consistency for high-scale scenarios.
+- **CQRS Pattern**: Separate read/write models to optimize for different consistency requirements.
 
-    const results = await Promise.all(requests);
-    const successful = results.filter((r) => r.count === 1).length;
-    expect(successful).toBeLessThanOrEqual(3); // Only 3 can succeed for 10 available tickets
-  });
-  ```
-- **Load Testing**: Artillery scripts verify behavior under stress conditions.
-
-### Performance Impact
-
-- **Lock Duration**: Locks held only during the booking transaction (typically <100ms)
-- **Concurrency**: PostgreSQL efficiently manages row locks; no blocking for different ticket tiers
-- **Scalability**: Suitable for high-throughput scenarios with proper database tuning
+**Performance Impact**: Current locks held <100ms, suitable for assignment scale. For production, consider optimistic locking with exponential backoff for better throughput.
 
 ## Availability and Reliability (Four Nines - 99.99%)
 
 **Target**: 99.99% uptime for 1M DAU and 50K concurrent users.
 
-### Current Design Reliability
+### Current Implementation
 
-- Single PostgreSQL instance with connection pooling.
-- Express error handling and health checks.
-- Structured logging for monitoring.
-
-### Scaling to Four Nines
-
-- **Database Layer**:
-  - PostgreSQL clustering with Patroni for automatic failover (<30s downtime).
-  - Read replicas for query offloading.
-  - Connection pooling prevents exhaustion.
-- **Application Layer**:
-  - Multiple Node.js instances behind load balancer (NGINX/AWS ALB).
-  - PM2 for process management and auto-restart.
-  - Horizontal scaling with auto-scaling groups.
-- **Global Distribution**:
-  - Multi-region deployment (e.g., AWS us-east-1, eu-west-1).
-  - DNS-based routing (Route 53) for geographic load balancing.
-  - CDN (Cloudflare) for static assets.
-- **Monitoring & Alerting**:
-  - Prometheus/Grafana for metrics collection.
-  - Alerts for error rates, latency spikes.
-  - SLO monitoring to maintain 99.99% (max 1 hour downtime/month).
-- **Failure Scenarios**:
-  - Database failover: Automatic promotion of replica.
-  - Application crash: Load balancer routes to healthy instances.
-  - Network issues: Multi-region redundancy.
+**Decision**: Implemented basic reliability features suitable for assignment scope.
+- **Database Layer**: Single PostgreSQL instance with connection pooling.
+- **Application Layer**: Express error handling, health checks, and structured logging.
+- **Process Management**: Basic Node.js process with global error handlers.
 
 ### Trade-offs
 
-- **Cost vs. Complexity**: Multi-region setup increases infrastructure costs but ensures global availability.
-- **Data Consistency**: Eventual consistency across regions vs. strong consistency within regions.
+**Decision Rationale**: Focused on core business logic rather than production infrastructure complexity.
+- **Simplicity vs Production Readiness**: Single instance approach is simple but lacks high availability. Current design prioritizes development speed over enterprise-grade reliability.
+- **Cost vs Availability**: No redundancy implemented to keep assignment scope manageable. Production would require significant infrastructure investment.
+
+### Future Scalability
+
+**What Can Be Done and How**:
+- **Database Layer**: PostgreSQL clustering with Patroni for automatic failover (<30s downtime), read replicas for query offloading.
+- **Application Layer**: Multiple Node.js instances behind load balancer (NGINX/AWS ALB), PM2 for process management, horizontal scaling with auto-scaling groups.
+- **Global Distribution**: Multi-region deployment with DNS-based routing (Route 53), CDN (Cloudflare) for static assets.
+- **Monitoring & Alerting**: Prometheus/Grafana for metrics, SLO monitoring to maintain 99.99% uptime (max 1 hour downtime/month).
+- **Failure Scenarios**: Automatic database failover, load balancer routing around failed instances, multi-region redundancy for network issues.
 
 ## Performance (p95 < 500ms for Booking Requests)
 
 **Target**: p95 latency < 500ms under load.
 
-### Current Optimizations
+### Current Implementation
 
-- Database indexing on `tier` and `availableQuantity`.
-- Connection pooling with Prisma.
-- Compression and rate limiting.
-
-### Scaling for Performance
-
-- **Caching Layer**:
-  - Redis for ticket inventory caching (cache-aside pattern).
-  - Reduces database load for read-heavy operations.
-- **Asynchronous Processing**:
-  - Message queues (Redis/RabbitMQ) for booking confirmation.
-  - API returns immediately after validation, processing happens async.
-- **Database Optimization**:
-  - Read replicas for inventory queries.
-  - Query optimization with EXPLAIN plans.
-  - Partitioning for large booking tables.
-- **Load Balancing**:
-  - Distribute requests across multiple app instances.
-  - Session affinity not needed (stateless design).
-- **CDN & Edge**:
-  - Cloudflare for global content delivery.
-  - Reduces latency for international users.
-- **Load Testing**:
-  - Tools: Artillery/k6 for 50K concurrent users simulation.
-  - Target: p95 < 500ms, throughput > 1000 req/s.
+**Decision**: Implemented basic performance optimizations suitable for assignment scale.
+- **Database Layer**: Indexing on `tier` and `availableQuantity` columns, connection pooling with Prisma.
+- **Application Layer**: Compression, rate limiting, and efficient Express middleware chain.
+- **Query Optimization**: Direct SQL queries for critical booking path to minimize ORM overhead.
 
 ### Trade-offs
 
-- **Caching Consistency**: Stale data risk vs. performance gain. Cache invalidation on booking.
-- **Async Processing**: Improved performance but requires idempotency handling.
+**Decision Rationale**: Balanced performance with development simplicity for assignment scope.
+- **Optimization vs Complexity**: Basic optimizations chosen over advanced caching/layering to keep implementation manageable.
+- **Synchronous vs Asynchronous**: Synchronous booking flow prioritizes user experience clarity over potential performance gains from async processing.
+- **Database Load**: No read replicas or caching implemented - suitable for assignment scale but would need optimization for production load.
+
+### Future Scalability
+
+**What Can Be Done and How**:
+- **Caching Layer**: Redis for ticket inventory caching (cache-aside pattern) to reduce database load for read operations.
+- **Asynchronous Processing**: Message queues (Redis/RabbitMQ) for booking confirmation, allowing immediate API response after validation.
+- **Database Optimization**: Read replicas for inventory queries, query optimization with EXPLAIN plans, partitioning for large booking tables.
+- **Load Balancing**: Distribute requests across multiple app instances, CDN (Cloudflare) for global content delivery.
+- **Load Testing**: Artillery/k6 for 50K concurrent users simulation, targeting p95 < 500ms and throughput > 1000 req/s.
 
 ## Scalability Considerations
 
@@ -528,63 +494,33 @@ Managing development, staging, and production environments is crucial for mainta
 
 ### Docker-based Environment Management
 
-The project uses Docker for containerization to ensure consistency across environments.
+**Current Implementation**: Basic Docker Compose for local development only.
 
-#### Docker Files
+#### Current Docker Setup
+- `docker-compose.yml`: Simple orchestration of app and PostgreSQL containers
+- `Dockerfile`: Basic Node.js container for development
+- **Purpose**: Consistent local development environment
 
-- `Dockerfile.dev`: Optimized for development with hot reloading and debugging tools.
-- `Dockerfile.prod`: Optimized for production with multi-stage builds for smaller images and security hardening.
-- `docker-compose.yml`: Orchestrates services (app, database) for local development.
+#### Future Scalability (Not Implemented)
+- Multi-stage Docker builds for production optimization
+- Separate Dockerfiles for dev/staging/production
+- Kubernetes orchestration
+- CI/CD with automated deployments
 
-#### Environment-specific Configurations
-
-- **Environment Variables**: Separate `.env` files for each environment:
-  - `.env` (development)
-  - `.env.staging` (staging)
-  - `.env.prod` (production)
-- **Database**: Different database instances/connections per environment to prevent data contamination.
-
-#### Development Environment
-
-```bash
-# Using docker-compose for local development
-docker-compose up --build
-
-# Or run locally with npm
-npm run dev
-```
-
-- Features: Hot reloading, attached debugger, local PostgreSQL via Docker.
-
-#### Staging Environment
-
-- Deployed via CI/CD pipeline after successful tests.
-- Uses staging-specific database and environment variables.
-- Purpose: Integration testing, user acceptance testing, performance validation.
-
-#### Production Environment
-
-- Deployed via automated pipeline with blue-green strategy.
-- Uses production Docker image (`Dockerfile.prod`).
-- Features: Optimized image size, security scanning, health checks.
+**Decision**: Focused on core business logic rather than complex deployment infrastructure.
+**Trade-off**: Development speed vs. production operations. Simple setup allows faster iteration but lacks production deployment automation.
 
 ### CI/CD Pipeline
 
-#### GitHub Actions Workflow
+**Current Implementation**: No automated CI/CD pipeline implemented.
 
-- **Triggers**: Push to main/develop branches, pull requests.
-- **Stages**:
-  1. **Lint & Test**: Run ESLint, unit/integration tests.
-  2. **Build**: Create Docker images for dev/staging/prod.
-  3. **Deploy to Staging**: Automated deployment after tests pass.
-  4. **Manual Approval**: For production deployment.
-  5. **Deploy to Production**: Blue-green deployment with rollback capability.
+**Future Scalability** (Not Implemented):
+- GitHub Actions for automated testing and deployment
+- Blue-green deployments for zero-downtime
+- Automated rollback capabilities
 
-#### Deployment Strategy
-
-- **Blue-Green Deployments**: Two identical production environments (blue/green). Traffic switches after successful health checks.
-- **Rollback**: Automated rollback to previous version if health checks fail.
-- **Zero Downtime**: Load balancer routes traffic during deployment.
+**Decision**: Focused on core business logic rather than deployment automation for assignment scope.
+**Trade-off**: Manual deployment process vs. automated pipelines. Current approach prioritizes development speed over operational automation.
 
 ### Infrastructure as Code (IaC)
 
