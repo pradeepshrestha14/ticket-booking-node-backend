@@ -23,6 +23,7 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
+import { OpenAPIV3 } from "openapi-types";
 
 import ticketsRouter from "@/routes/ticket.routes";
 import { httpLogger, NotFoundError } from "@/utils";
@@ -37,17 +38,18 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API for managing ticket bookings",
     },
-    servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 4000}`,
-        description: "Development server",
-      },
-    ],
+    servers: [] as OpenAPIV3.ServerObject[], // initially empty
+    // servers: [
+    //   {
+    //     url: SERVER_URL,
+    //     description: "Development server",
+    //   },
+    // ],
   },
   apis: ["./src/routes/*.ts"], // Path to the API docs
 };
 
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
+const swaggerSpec = swaggerJSDoc(swaggerOptions) as OpenAPIV3.Document;
 
 /**
  * Factory function that creates and configures an Express application instance.
@@ -110,7 +112,15 @@ export const createApp = (): Application => {
   // ------------------------
   // Swagger Documentation
   // ------------------------
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // / Middleware to dynamically set server URL
+  const swaggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const protocol = req.protocol;
+    const host = req.get("host"); // e.g., ticket-booking-node-backend.onrender.com
+    swaggerSpec.servers = [{ url: `${protocol}://${host}`, description: "Dynamic server URL" }];
+    next();
+  };
+  app.use("/api-docs", swaggerMiddleware, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // ------------------------
   // 404 Handler
