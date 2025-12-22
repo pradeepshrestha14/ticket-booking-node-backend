@@ -36,6 +36,7 @@ it("POST /api/tickets/book → 201 success", async () => {
     tier: "GA",
     bookedQuantity: 3,
     remainingQuantity: 7,
+    totalAmount: 30, // 10 * 3
   });
 });
 

@@ -4,7 +4,9 @@ import { NotFoundError } from "@/utils";
 
 export interface ITicketRepository {
   findAll(): Promise<TicketResponseDTO[]>;
-  findByTier(tier: TicketTier): Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity">>;
+  findByTier(
+    tier: TicketTier,
+  ): Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity" | "price">>;
   /**
    * Atomically decrements ticket quantity with row-level locking to prevent race conditions.
    * Uses SELECT ... FOR UPDATE to lock the inventory row during the operation.
@@ -29,18 +31,22 @@ export class TicketRepository implements ITicketRepository {
   async findAll(): Promise<TicketResponseDTO[]> {
     return this.db.ticketInventory.findMany({
       select: {
+        id: true,
         tier: true,
         price: true,
         totalQuantity: true,
         availableQuantity: true,
       },
+      orderBy: {
+        id: "asc",
+      },
     });
   }
 
   /**
-   * Finds a specific ticket tier and returns its availability.
+   * Finds a specific ticket tier and returns its availability and price.
    * @param tier The ticket tier to search for
-   * @returns Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity">> Ticket data with tier and available quantity
+   * @returns Promise<Pick<TicketResponseDTO, "tier" | "availableQuantity" | "price">> Ticket data with tier, available quantity, and price
    * @throws NotFoundError if the ticket tier doesn't exist
    */
   async findByTier(tier: TicketTier) {
@@ -49,6 +55,7 @@ export class TicketRepository implements ITicketRepository {
       select: {
         tier: true,
         availableQuantity: true,
+        price: true,
       },
     });
 

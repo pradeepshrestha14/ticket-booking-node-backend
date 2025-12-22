@@ -12,6 +12,8 @@ interface BookTicketsResponseDTO {
   bookedQuantity: number;
   /** Number of tickets remaining in this tier after booking */
   remainingQuantity: number;
+  /** Total amount paid for the booking */
+  totalAmount: number;
 }
 
 export { BookTicketsRequestDto, BookTicketsResponseDTO };

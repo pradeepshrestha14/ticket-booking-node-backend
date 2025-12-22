@@ -79,6 +79,22 @@ export class UnprocessableEntityError extends AppError {
   }
 }
 
+/**
+ * Error class for payment processing failures.
+ * Used when payment simulation or processing fails.
+ */
+export class PaymentFailedError extends AppError {
+  constructor(message = "Payment Failed", details: unknown | null = null) {
+    super(
+      ERROR_NAMES.PAYMENT_FAILED,
+      message,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      ERROR_CODES.PAYMENT_FAILED,
+      details,
+    );
+  }
+}
+
 export class InternalServerError extends AppError {
   constructor(message = "Internal Server Error") {
     super(

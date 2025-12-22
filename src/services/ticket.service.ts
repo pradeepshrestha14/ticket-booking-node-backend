@@ -2,7 +2,7 @@ import { TicketRepository } from "@/repositories/ticket.repository";
 import { prisma, PrismaClient, Prisma } from "@/db/prisma";
 import { BookTicketsRequestDto, BookTicketsResponseDTO } from "@/dtos/book-ticket.dto";
 import { TicketResponseDTO } from "@/dtos/ticket.dto";
-import { NotFoundError, UnprocessableEntityError } from "@/utils/errors";
+import { NotFoundError, UnprocessableEntityError, PaymentFailedError } from "@/utils/errors";
 
 /**
  * Factory function to create ticket service with dependency injection.
@@ -21,6 +21,27 @@ export const createTicketService = (
     const repo = repoFactory();
     return repo.findAll();
   };
+  /**
+   * Simulates payment processing with random success/failure.
+   * In a real system, this would integrate with payment providers like Stripe.
+   * @param amount Total amount to charge
+   * @returns Promise<boolean> True if payment succeeds, false if fails
+   */
+  const simulatePayment = async (amount: number): Promise<boolean> => {
+    // Simulate payment processing delay
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Simulate 90% success rate, 10% failure rate
+    const success = Math.random() > 0.5;
+
+    if (!success) {
+      console.log(`Payment failed for amount: $${amount}`);
+    } else {
+      console.log(`Payment succeeded for amount: $${amount}`);
+    }
+
+    return success;
+  };
 
   /**
    * Books tickets with concurrency control and transactional integrity.
@@ -28,6 +49,7 @@ export const createTicketService = (
    * @param payload Booking request containing userId, tier, and quantity
    * @returns Promise<BookTicketsResponseDTO> Booking confirmation with remaining quantity
    * @throws UnprocessableEntityError if insufficient tickets available
+   * @throws PaymentFailedError if payment processing fails
    * @throws NotFoundError if ticket tier doesn't exist
    */
   const bookTickets = async (payload: BookTicketsRequestDto): Promise<BookTicketsResponseDTO> => {
@@ -39,6 +61,11 @@ export const createTicketService = (
       if (!ticket) {
         throw new NotFoundError("TICKET_NOT_FOUND");
       }
+
+      // Calculate total amount
+      const totalAmount = ticket.price * quantity;
+
+      // Decrement inventory first
       const data = await repo.decrementQuantity(tier, quantity);
       if (data.count === 0) {
         const err = new UnprocessableEntityError("INSUFFICIENT_TICKETS", [
@@ -50,7 +77,18 @@ export const createTicketService = (
         throw err;
       }
 
-      // Create booking record with user ID
+      // Simulate payment processing
+      const paymentSuccess = await simulatePayment(totalAmount);
+      if (!paymentSuccess) {
+        throw new PaymentFailedError("Payment processing failed. Please try again.", [
+          {
+            path: "payment",
+            message: "Payment processing failed. Please try again.",
+          },
+        ]);
+      }
+
+      // Create booking record only if payment succeeds
       await tx.booking.create({
         data: {
           userId,
@@ -66,6 +104,7 @@ export const createTicketService = (
         tier,
         bookedQuantity: quantity,
         remainingQuantity: updatedTicket.availableQuantity,
+        totalAmount,
       };
     });
   };

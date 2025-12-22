@@ -36,6 +36,8 @@ Built with **TypeScript**, **Prisma**, and follows best practices for security, 
 - Request logging using **Pino**
 - Rate limiting and CORS support
 - Health check endpoint
+- **Concurrency Control**: Row-level locking prevents double-booking and race conditions
+- **Transactional Integrity**: Database transactions ensure atomic booking operations
 
 ---
 
@@ -252,6 +254,19 @@ npm start
   "quantity": 2
 }
 ```
+
+### Concurrency and Race Condition Handling
+
+The booking system implements robust concurrency control to prevent double-booking and race conditions:
+
+- **Row-Level Locking**: Uses PostgreSQL's `SELECT ... FOR UPDATE` to lock ticket inventory rows during booking operations
+- **Transactional Integrity**: All booking operations are wrapped in database transactions ensuring atomicity
+- **Race Condition Prevention**: Multiple concurrent requests for the same tickets are serialized, ensuring only valid bookings succeed
+- **Testing**: Comprehensive concurrency tests validate behavior under high load scenarios
+
+**Note**: Request idempotency (handling duplicate requests from the same client) was considered but not implemented. For production systems, consider adding idempotency keys to prevent accidental duplicate bookings from network retries or form resubmissions.
+
+For detailed implementation details, see the [Concurrency Handling](#consistency--concurrency-handling) section in `ARCHITECTURAL_DECISIONS.md`.
 
 ## Error Handling
 
