@@ -1,5 +1,5 @@
 import { TicketResponseDTO } from "@/dtos/ticket.dto";
-import { PrismaClient, TicketTier, Prisma } from "@/generated/prisma";
+import { PrismaClient, TicketTier, Prisma } from "@/db/prisma";
 import { NotFoundError } from "@/utils";
 
 export interface ITicketRepository {

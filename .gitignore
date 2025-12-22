@@ -13,7 +13,6 @@ build/
 # Prisma
 # Don't commit generated client or migrations unless intentional
 # But often we commit migrations for version control
-src/generated/prisma/
 prisma/dev.db
 *.sqlite
 
