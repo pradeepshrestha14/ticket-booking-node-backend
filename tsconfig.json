@@ -19,9 +19,9 @@
       "@/utils/*": ["utils/*"],
       "@/constants/*": ["constants/*"],
       "@/validation/*": ["validation/*"],
-      "@/db/*": ["db/*"],
-      "@/generated/*": ["generated/*"]
+      "@/db/*": ["db/*"]
     }
   },
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "tests"]
 }
