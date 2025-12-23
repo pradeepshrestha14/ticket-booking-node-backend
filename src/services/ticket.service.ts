@@ -32,7 +32,7 @@ export const createTicketService = (
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Simulate 90% success rate, 10% failure rate
-    const success = Math.random() > 0.5;
+    const success = Math.random() > 0.1;
 
     if (!success) {
       console.log(`Payment failed for amount: $${amount}`);

@@ -58,9 +58,32 @@ Built with **TypeScript**, **Prisma**, and follows best practices for security, 
 
 ## Prerequisites
 
-- Node.js v22 or greater
-- npm / yarn
-- PostgreSQL v14+ (for local setup) or Docker (for containerized setup)
+Before setting up the project, ensure you have the following installed:
+
+### For All Setup Options
+- **Node.js**: v20 or greater (v22 recommended)
+- **npm**: v8 or greater (comes with Node.js) or **yarn** v1.22+
+- **Git**: For cloning the repository
+
+### For Local PostgreSQL Setup (Option 1)
+- **PostgreSQL**: v14 or greater
+  - Install locally on your machine (macOS: `brew install postgresql`, Ubuntu: `apt install postgresql`)
+  - Or use a local PostgreSQL server/container
+- **Database**: Create a database named `ticket_booking` (or update connection string)
+
+### For Docker Compose Setup (Option 2)
+- **Docker**: v20.10 or greater
+- **Docker Compose**: v2.0 or greater
+  - Usually included with Docker Desktop installations
+
+### For Development (All Options)
+- **Code Editor**: VS Code recommended (with TypeScript support)
+- **Postman** or **curl**: For API testing (optional)
+
+### System Requirements
+- **RAM**: 4GB minimum, 8GB recommended
+- **Disk Space**: 500MB for dependencies and database
+- **Network**: Internet connection for npm packages and database connections
 
 ---
 
@@ -111,6 +134,55 @@ For a quick development setup with containerized PostgreSQL and Express app, use
    docker-compose down
    ```
 
+### Option 3: Live Demo on Render
+
+A live demo of the backend is deployed on **Render Cloud Service** for testing and demonstration purposes.
+
+#### 🚀 **Live URLs**
+- **Health Check**: https://ticket-booking-node-backend.onrender.com/health
+- **API Documentation (Swagger)**: https://ticket-booking-node-backend.onrender.com/api-docs/
+- **Base API URL**: https://ticket-booking-node-backend.onrender.com
+
+#### 🗄️ **Database**
+- **PostgreSQL Database**: Hosted on **Render PostgreSQL** service
+- **Database URL**: Configured via Render environment variables (not exposed for security)
+
+#### 📋 **API Testing**
+You can test the live API endpoints directly using the Swagger documentation or tools like Postman/cURL:
+
+```bash
+# Health check
+curl https://ticket-booking-node-backend.onrender.com/health
+
+# Get all tickets
+curl https://ticket-booking-node-backend.onrender.com/api/tickets
+
+# Book tickets (example)
+curl -X POST https://ticket-booking-node-backend.onrender.com/api/tickets/book \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "demo-user-123", "tier": "GA", "quantity": 1}'
+```
+
+#### ⚠️ **Important Notes**
+- **Free Tier Limitations**: This deployment uses Render's free tier which has several constraints:
+  - **Cold Start Delays**: App sleeps after 15 minutes of inactivity, first request may take 10-30 seconds to wake up
+  - **Monthly Usage Limits**: 750 hours/month free, then service pauses until next month
+  - **Resource Constraints**: Limited CPU and memory, not suitable for high-traffic production use
+  - **No Custom Domains**: Uses render.com subdomain only
+- **Demo Data**: The live database is seeded with initial ticket inventory for testing
+- **Rate Limiting**: Basic rate limiting is enabled to prevent abuse
+- **Data Persistence**: Demo data may be reset periodically due to free tier limitations
+
+#### 🔧 **Deployment Details**
+- **Platform**: Render (render.com)
+- **Source**: Direct GitHub repository integration (not Docker-based)
+- **Build Process**: Render automatically pulls code from GitHub and runs build
+- **Build Command**: `npm run build`
+- **Start Command**: `npm start`
+- **Node Version**: 20.x
+- **Environment**: Production mode with optimized build
+- **Trade-off**: Source-based deployment (simpler setup) vs. container-based (better consistency)
+
 ---
 
 ## Installation
@@ -128,30 +200,43 @@ yarn install
 
 ## Environment Variables
 
-Create a `.env` file in the root directory based on `.env.backup`. The following variables are required:
+### 📋 **Setup Instructions**
+
+1. **Copy the template file**:
+   ```bash
+   cp .env.backup .env
+   ```
+
+2. **Edit the `.env` file** with your actual values:
+   - Replace `<username>`, `<password>`, `<host>`, `<port>`, `<database>` with your database credentials
+   - Update other variables as needed for your environment
+
+The `.env.backup` file contains placeholders and examples to guide you through the setup process.
+
+### Required Variables
 
 ```env
 # Database connection URL
 # For local development: use localhost
 # For Docker: use db (the database service name)
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ticket_booking"
+DATABASE_URL="postgresql://<username>:<password>@<host>:<port>/<database>" # e.g., "postgresql://postgres:postgres@localhost:5432/ticket_booking" (use "db" instead of "localhost" when running docker-compose up)
 
 # Server port
-PORT=4000
+PORT=<port_number> # e.g., 4000
 
 # Logging level (error, warn, info, debug)
-LOG_LEVEL=error
+LOG_LEVEL=<log_level> # e.g., error
 
 # Node environment
-NODE_ENV=development
+NODE_ENV=<environment> # e.g., development
 
 # Allowed origins for CORS (comma-separated URLs)
-ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001"
+ALLOWED_ORIGINS="<allowed_origins>" # e.g., "http://localhost:3000,http://localhost:3001"
 
 # PostgreSQL credentials (required only for Docker Compose setup)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=ticket_booking
+POSTGRES_USER=<postgres_user> # e.g., postgres
+POSTGRES_PASSWORD=<postgres_password> # e.g., postgres
+POSTGRES_DB=<postgres_db> # e.g., ticket_booking
 ```
 
 ### ⚠️ **Important: Database URL Configuration**

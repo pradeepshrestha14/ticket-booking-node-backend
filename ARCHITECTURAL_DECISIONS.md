@@ -171,7 +171,11 @@ erDiagram
 
 ### Deployment Architecture (Current vs Future)
 
-**Current Implementation**: Simple Docker Compose setup for local development only.
+**Current Implementation**: Simple deployments for development and demonstration.
+
+#### Current Deployments
+1. **Local Development**: Docker Compose setup with Express app and PostgreSQL containers
+2. **Demo Deployment**: Render free tier with source-based deployment from GitHub repository
 
 ```mermaid
 graph TB
@@ -179,18 +183,46 @@ graph TB
         A[Express App<br/>Container] --> B[PostgreSQL<br/>Container]
     end
 
+    subgraph "Current - Render Free Tier (Demo)"
+        F[GitHub Repo<br/>Source Code] --> C[Render Build<br/>npm run build]
+        C --> G[Express App<br/>Running Service] --> D[PostgreSQL<br/>Render Database]
+        G --> E[Swagger UI<br/>Auto-generated]
+    end
+
     style A fill:#e3f2fd
     style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style D fill:#e8f5e8
+    style F fill:#e1f5fe
+```
 ```
 
-**Future Scalability** (Not Implemented):
-- Multi-stage Docker builds for production optimization
-- Kubernetes orchestration for horizontal scaling
-- Load balancers and service meshes
-- Multi-region deployments with CDN
+#### Render Free Tier Trade-offs
+**Decision**: Used Render free tier with source-based deployment for quick demonstration.
+**Deployment Approach**: Direct GitHub integration (no Docker containers) - Render pulls source code, runs build, and starts server.
+**Limitations**:
+- **Cold Starts**: App sleeps after 15 minutes inactivity, causing 10-30 second delays
+- **Resource Constraints**: Limited CPU/memory, not suitable for production traffic
+- **Usage Limits**: 750 hours/month free quota, then service pauses
+- **No Custom Domains**: Uses render.com subdomain only
+- **Source-based Trade-off**: Simpler setup and faster deployment vs. container consistency and environment isolation
 
-**Decision**: Started with simple docker-compose for development speed and assignment scope.
-**Trade-off**: Quick setup vs. production-ready infrastructure. Current approach prioritizes development efficiency over advanced deployment complexity.
+**Trade-off**: Quick source-based demo deployment vs. containerized production hosting. Suitable for assignment demonstration but lacks deployment consistency and environment control.
+
+#### Future Scalability (Production-Ready Deployment)
+
+**What Can Be Done and How**:
+- **Cloud Platforms**: AWS ECS/EKS, Google Cloud Run, Azure Container Apps
+- **Load Balancing**: Application Load Balancers (ALB) with auto-scaling groups
+- **Multi-region Deployment**: Global distribution with Route 53 DNS routing
+- **CDN Integration**: Cloudflare or CloudFront for static assets and global caching
+- **Database Scaling**: RDS Aurora with read replicas, connection pooling
+- **Monitoring & Observability**: CloudWatch, DataDog, or Prometheus for metrics
+- **CI/CD Pipelines**: GitHub Actions with blue-green deployments
+- **Infrastructure as Code**: Terraform/CloudFormation for automated provisioning
+
+**Decision**: Focused on core business logic rather than complex deployment infrastructure for assignment scope.
+**Trade-off**: Development speed vs. production operations. Simple setup allows faster iteration but lacks enterprise-grade deployment automation.
 
 ## Trade-offs and Design Decisions
 
@@ -347,8 +379,11 @@ async decrementQuantity(tier: TicketTier, quantity: number) {
 ### Future Scalability
 
 **What Can Be Done and How**:
+- **Application Layer**: 
+  - **Load Balancers**: AWS ALB or NGINX to distribute traffic across multiple API instances
+  - **Multiple API Instances**: Horizontal scaling with auto-scaling groups based on CPU/memory metrics
+  - PM2 for process management and zero-downtime deployments
 - **Database Layer**: PostgreSQL clustering with Patroni for automatic failover (<30s downtime), read replicas for query offloading.
-- **Application Layer**: Multiple Node.js instances behind load balancer (NGINX/AWS ALB), PM2 for process management, horizontal scaling with auto-scaling groups.
 - **Global Distribution**: Multi-region deployment with DNS-based routing (Route 53), CDN (Cloudflare) for static assets.
 - **Monitoring & Alerting**: Prometheus/Grafana for metrics, SLO monitoring to maintain 99.99% uptime (max 1 hour downtime/month).
 - **Failure Scenarios**: Automatic database failover, load balancer routing around failed instances, multi-region redundancy for network issues.
@@ -374,9 +409,11 @@ async decrementQuantity(tier: TicketTier, quantity: number) {
 ### Future Scalability
 
 **What Can Be Done and How**:
+- **Database Optimization**: 
+  - **Read Replicas**: PostgreSQL read replicas for inventory queries to reduce primary database load and improve read performance
+  - Query optimization with EXPLAIN plans, partitioning for large booking tables
 - **Caching Layer**: Redis for ticket inventory caching (cache-aside pattern) to reduce database load for read operations.
 - **Asynchronous Processing**: Message queues (Redis/RabbitMQ) for booking confirmation, allowing immediate API response after validation.
-- **Database Optimization**: Read replicas for inventory queries, query optimization with EXPLAIN plans, partitioning for large booking tables.
 - **Load Balancing**: Distribute requests across multiple app instances, CDN (Cloudflare) for global content delivery.
 - **Load Testing**: Artillery/k6 for 50K concurrent users simulation, targeting p95 < 500ms and throughput > 1000 req/s.
 
@@ -384,10 +421,19 @@ async decrementQuantity(tier: TicketTier, quantity: number) {
 
 **Assumptions**: 1M DAU, 50K peak concurrent users.
 
+### Application Statelessness
+
+**Current Implementation**: Node.js/Express app is stateless - no session storage, in-memory state, or sticky sessions required.
+- **Benefits**: Enables horizontal scaling across multiple instances behind load balancers
+- **Session Management**: User identification via request parameters (userId) - no server-side session storage
+- **Load Distribution**: Requests can be routed to any available instance without affinity requirements
+
 ### Horizontal Scaling
 
-- Stateless application design enables easy scaling.
-- Database sharding if single instance becomes bottleneck.
+- **API Instances**: Multiple Node.js app instances behind load balancers for handling concurrent requests
+- **Load Balancers**: Distribute traffic across instances (e.g., AWS ALB, NGINX) with health checks
+- **Auto-scaling**: Scale instances based on CPU/memory metrics or request volume
+- **Database sharding if single instance becomes bottleneck**
 
 ### Vertical Scaling
 
