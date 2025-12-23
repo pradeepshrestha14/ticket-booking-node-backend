@@ -7,6 +7,8 @@ import { TicketTier } from "@/db/prisma";
 export type TicketResponseDTO = {
   /** The ticket tier/category (VIP, FRONT_ROW, GA) */
   tier: TicketTier;
+  /** Display label for the tier (e.g., "General Admission" for GA) */
+  label: string;
   /** Price per ticket in the tier */
   price: number;
   /** Total number of tickets originally available in this tier */

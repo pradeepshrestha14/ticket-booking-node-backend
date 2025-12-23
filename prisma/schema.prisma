@@ -20,6 +20,7 @@ enum TicketTier {
 model TicketInventory {
   id                 Int        @id @default(autoincrement())
   tier               TicketTier @unique
+  label              String     // Display name for the tier (e.g., "General Admission" for GA)
   price              Int
   totalQuantity      Int
   availableQuantity  Int

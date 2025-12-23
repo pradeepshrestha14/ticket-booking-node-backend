@@ -33,6 +33,7 @@ export class TicketRepository implements ITicketRepository {
       select: {
         id: true,
         tier: true,
+        label: true,
         price: true,
         totalQuantity: true,
         availableQuantity: true,

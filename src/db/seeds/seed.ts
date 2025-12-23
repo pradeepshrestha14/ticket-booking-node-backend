@@ -5,9 +5,9 @@
  * pricing, and stock quantities.
  *
  * Ticket Tiers:
- * - VIP        → $100,  50 tickets
- * - FRONT_ROW  → $50,   200 tickets
- * - GA         → $10,   1000 tickets
+ * - VIP        → $100,  50 tickets  (Label: "VIP")
+ * - FRONT_ROW  → $50,   200 tickets (Label: "Front Row")
+ * - GA         → $10,   1000 tickets (Label: "General Admission (GA)")
  *
  * Usage:
  *   npx prisma db seed
@@ -22,6 +22,7 @@ async function main() {
     update: {},
     create: {
       tier: TicketTier.VIP,
+      label: "VIP",
       price: 100,
       totalQuantity: 50,
       availableQuantity: 50,
@@ -33,6 +34,7 @@ async function main() {
     update: {},
     create: {
       tier: TicketTier.FRONT_ROW,
+      label: "Front Row",
       price: 50,
       totalQuantity: 200,
       availableQuantity: 200,
@@ -44,6 +46,7 @@ async function main() {
     update: {},
     create: {
       tier: TicketTier.GA,
+      label: "General Admission (GA)",
       price: 10,
       totalQuantity: 1000,
       availableQuantity: 1000,
