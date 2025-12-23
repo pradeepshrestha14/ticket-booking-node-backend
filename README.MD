@@ -1,5 +1,3 @@
-//TODO: Needs to be updated => Initial Readme file
-
 # Ticket Booking Backend
 
 A **Node.js + Express backend** for managing ticket booking operations.  
