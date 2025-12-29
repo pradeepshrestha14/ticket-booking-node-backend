@@ -14,6 +14,7 @@
 // before running the test, ensure to
 // first set "remaining_quantity" of "GA" tier to 10 in the database << table "TicketInventory" to see both success and failure cases
 // now, if we send 10 concurrent requests each booking 3 tickets, we should see 3 succeed and 7 fail due to insufficient tickets
+// dont forget to suppress the payment failure simulation in codebase for consistent results in "ticket.service.ts" because payment failure can also cause booking failures.
 
 // Finally run this test file script via:
 // npx ts-node-dev tests/stress-test.script.ts
@@ -25,6 +26,7 @@ const URL = "http://localhost:4000/api/tickets/book";
 const payload = {
   tier: "GA",
   quantity: 3,
+  userId: "stress-test-user-1",
 };
 
 const TOTAL_REQUESTS = 10;

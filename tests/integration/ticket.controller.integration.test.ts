@@ -3,8 +3,7 @@
 
 import request from "supertest";
 import { createApp } from "../../src/app";
-import { prisma } from "../../src/db/prisma";
-import { TicketTier } from "../../src/generated/prisma";
+import { prisma, TicketTier } from "../../src/db/prisma";
 
 const app = createApp();
 
@@ -17,6 +16,7 @@ beforeEach(async () => {
       price: 10,
       totalQuantity: 10,
       availableQuantity: 10,
+      label: "General Admission",
     },
   });
 });

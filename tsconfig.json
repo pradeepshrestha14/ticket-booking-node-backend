@@ -6,7 +6,7 @@
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
-    "types": ["node"],
+    "types": ["jest", "node"],
     "skipLibCheck": true,
     "baseUrl": "./src",
     "paths": {

@@ -1,6 +1,5 @@
-import { prisma } from "../../src/db/prisma";
+import { prisma, TicketTier } from "../../src/db/prisma";
 import { TicketRepository } from "../../src/repositories/ticket.repository";
-import { TicketTier } from "../../src/generated/prisma";
 
 describe("TicketRepository (integration)", () => {
   let repo: TicketRepository;
@@ -18,12 +17,14 @@ describe("TicketRepository (integration)", () => {
           price: 10,
           totalQuantity: 100,
           availableQuantity: 100,
+          label: "General Admission",
         },
         {
           tier: TicketTier.VIP,
           price: 100,
           totalQuantity: 10,
           availableQuantity: 10,
+          label: "VIP Admission",
         },
       ],
     });
@@ -89,7 +90,7 @@ describe("TicketRepository (integration)", () => {
 
     const results = await Promise.all(requests);
 
-    const successful = results.filter((r) => r.count === 1).length;
+    const successful = results.filter((r: { count: number }) => r.count === 1).length;
 
     expect(successful).toBeLessThanOrEqual(3);
 
